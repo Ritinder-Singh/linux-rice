@@ -122,7 +122,7 @@ paru_install \
     obsidian \
     ngrok \
     chromedriver \
-    nerd-fonts-monaspace \
+    otf-monaspace-nerd \
     opentofu \
     terragrunt \
     fnm \
