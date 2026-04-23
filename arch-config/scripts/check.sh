@@ -127,7 +127,7 @@ echo "── Apps ────────────────────�
 check "keepassxc"
 check "obsidian"
 check "chromium"
-check "zen" "zen"
+check "zen" "zen-browser"
 check "thunar"
 
 echo ""
