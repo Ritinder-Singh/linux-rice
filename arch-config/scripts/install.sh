@@ -77,7 +77,7 @@ pacman_install \
     bluez bluez-utils blueman \
     \
     `# Fonts & theme` \
-    ttf-monaspace-nerd ttf-jetbrains-mono-nerd \
+    ttf-jetbrains-mono-nerd \
     noto-fonts noto-fonts-cjk noto-fonts-emoji \
     papirus-icon-theme nwg-look qt5ct \
     \
@@ -122,6 +122,7 @@ paru_install \
     obsidian \
     ngrok \
     chromedriver \
+    nerd-fonts-monaspace \
     opentofu \
     terragrunt \
     fnm \
@@ -142,7 +143,7 @@ success "Rust toolchain ready"
 
 # ── Step 5: NVIDIA drivers ────────────────────────────────────────────────────
 log "Installing NVIDIA drivers..."
-paru_install nvidia nvidia-utils nvidia-prime lib32-nvidia-utils
+pacman_install nvidia nvidia-utils nvidia-prime lib32-nvidia-utils
 
 # ── Step 6: Copy dotfiles ─────────────────────────────────────────────────────
 log "Copying dotfiles..."
