@@ -1,16 +1,16 @@
 configuration {
-    modi:               "drun,run,filebrowser";
-    show-icons:         true;
-    icon-theme:         "Papirus-Dark";
+    modi:                "drun,run,filebrowser";
+    show-icons:          true;
+    icon-theme:          "Papirus-Dark";
     drun-display-format: "{name}";
-    location:           0;
-    disable-history:    false;
-    hide-scrollbar:     true;
-    display-drun:       " Apps";
-    display-run:        " Run";
+    location:            0;
+    disable-history:     false;
+    hide-scrollbar:      true;
+    display-drun:        " Apps";
+    display-run:         " Run";
     display-filebrowser: " Files";
-    sidebar-mode:       true;
-    font:               "MonaspaceNeon Nerd Font 13";
-
-    @theme "~/.config/rofi/theme.rasi"
+    sidebar-mode:        true;
+    font:                "MonaspaceNeon Nerd Font 13";
 }
+
+@theme "~/.config/rofi/theme.rasi"
