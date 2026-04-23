@@ -59,7 +59,7 @@ pacman_install \
     `# Hyprland stack` \
     hyprland hyprlock hypridle brightnessctl \
     xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
-    waybar rofi-wayland \
+    waybar rofi-wayland swaybg \
     slurp grim wl-clipboard libnotify \
     \
     `# Terminal & shell` \
@@ -110,7 +110,7 @@ log "Installing AUR packages..."
 
 paru_install \
     hyprshot \
-    swww \
+    waypaper \
     swayosd \
     swaync \
     matugen \

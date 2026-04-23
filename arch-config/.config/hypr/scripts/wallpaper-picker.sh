@@ -8,10 +8,7 @@ SELECTED=$(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -n
   | rofi -dmenu -p " Wallpaper" -show-icons)
 
 if [[ -n "$SELECTED" ]]; then
-    swww img "$SELECTED" \
-        --transition-type wipe \
-        --transition-angle 30 \
-        --transition-duration 1.5
+    waypaper --wallpaper "$SELECTED"
 
     # Save current wallpaper path
     echo "$SELECTED" > "$HOME/.config/current-wallpaper"
