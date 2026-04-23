@@ -9,9 +9,18 @@
 }
 
 window#waybar {
-    background-color: rgba(22, 22, 30, 0.85);
+    background-color: rgba(22, 22, 30, 0.88);
     color:            #e0def4;
-    border-bottom:    1px solid rgba(88, 91, 112, 0.3);
+    border-radius:    12px;
+    border:           1px solid rgba(88, 91, 112, 0.25);
+}
+
+/* Control center toggle */
+#custom-control-center {
+    padding:     0 10px;
+    font-size:   16px;
+    color:       #c4a7e7;
+    margin-left: 8px;
 }
 
 /* Workspaces */
@@ -37,7 +46,6 @@ window#waybar {
 #cpu,
 #memory,
 #temperature,
-#network,
 #pulseaudio,
 #battery,
 #clock,

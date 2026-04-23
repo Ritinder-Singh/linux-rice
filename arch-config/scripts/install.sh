@@ -122,6 +122,7 @@ paru_install \
     obsidian \
     ngrok \
     chromedriver \
+    spotify \
     otf-monaspace-nerd \
     opentofu \
     terragrunt \
