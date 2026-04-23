@@ -1,0 +1,12 @@
+[manager]
+show_hidden    = false
+show_symlink   = true
+sort_by        = "alphabetical"
+sort_dir_first = true
+
+[preview]
+image_filter  = "lanczos3"
+image_quality = 75
+video_portal  = true
+max_width     = 600
+max_height    = 900

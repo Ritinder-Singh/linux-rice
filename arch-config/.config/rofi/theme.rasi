@@ -1,0 +1,66 @@
+/* Rofi theme — frosted glass icon grid */
+/* Colors are placeholders — Matugen overrides at runtime */
+
+* {
+    background-color: rgba(22, 22, 30, 0.90);
+    border-color:     rgba(88, 91, 112, 0.5);
+    text-color:       #e0def4;
+    spacing:          0;
+}
+
+window {
+    transparency:     "real";
+    background-color: rgba(22, 22, 30, 0.90);
+    border:           1px;
+    border-radius:    12px;
+    width:            600px;
+    padding:          20px;
+}
+
+inputbar {
+    children:         [prompt, entry];
+    background-color: rgba(40, 38, 62, 0.80);
+    border-radius:    8px;
+    padding:          8px 12px;
+    margin:           0 0 12px 0;
+}
+
+prompt {
+    text-color: #c4a7e7;
+    margin:     0 8px 0 0;
+}
+
+entry {
+    text-color:        #e0def4;
+    placeholder:       "Search...";
+    placeholder-color: #6e6a86;
+}
+
+listview {
+    columns: 4;
+    lines:   3;
+    spacing: 8px;
+}
+
+element {
+    orientation:  vertical;
+    border-radius: 8px;
+    padding:      12px 8px;
+}
+
+element selected {
+    background-color: rgba(196, 167, 231, 0.20);
+    border:           1px;
+    border-color:     rgba(196, 167, 231, 0.50);
+}
+
+element-icon {
+    size:             48px;
+    horizontal-align: 0.5;
+    margin:           0 0 8px 0;
+}
+
+element-text {
+    horizontal-align: 0.5;
+    text-color:       #e0def4;
+}

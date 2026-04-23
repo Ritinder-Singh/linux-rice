@@ -1,0 +1,121 @@
+# ── Layout ────────────────────────────────────────────────────────────────────
+format = """
+$directory$git_branch$git_status$nodejs$python$rust$golang$dart$java$kotlin$haskell$c$zig$ocaml$cmd_duration$fill$time
+$character"""
+
+add_newline = true
+
+# ── Prompt character ──────────────────────────────────────────────────────────
+[character]
+success_symbol = "[λ](bold green)"
+error_symbol   = "[λ](bold red)"
+vimcmd_symbol  = "[λ](bold yellow)"
+
+# ── Directory ─────────────────────────────────────────────────────────────────
+[directory]
+truncation_length = 3
+truncate_to_repo  = true
+style             = "bold blue"
+format            = "[ $path ]($style)"
+
+[directory.substitutions]
+"~/Developer" = " dev"
+"~"           = " ~"
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+[git_branch]
+symbol = " "
+style  = "bold purple"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style     = "bold red"
+format    = "([$all_status$ahead_behind]($style) )"
+ahead     = "⇡$count"
+behind    = "⇣$count"
+staged    = "[+$count](green)"
+modified  = "[~$count](yellow)"
+untracked = "[?$count](blue)"
+deleted   = "[-$count](red)"
+
+# ── Languages ─────────────────────────────────────────────────────────────────
+[nodejs]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold green"
+detect_files = ["package.json", ".node-version", ".nvmrc"]
+
+[python]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold yellow"
+detect_files = ["pyproject.toml", "requirements.txt", ".python-version", "uv.lock"]
+
+[rust]
+symbol       = "🦀 "
+format       = "[$symbol$version]($style) "
+style        = "bold red"
+detect_files = ["Cargo.toml"]
+
+[golang]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold cyan"
+detect_files = ["go.mod"]
+
+[dart]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold blue"
+detect_files = ["pubspec.yaml", ".dart_tool"]
+
+[java]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold red"
+detect_files = ["pom.xml", "build.gradle", "build.gradle.kts"]
+
+[kotlin]
+symbol = " "
+format = "[$symbol$version]($style) "
+style  = "bold purple"
+
+[haskell]
+symbol       = "λ "
+format       = "[$symbol$version]($style) "
+style        = "bold purple"
+detect_files = ["stack.yaml", "cabal.project", ".cabal"]
+
+[c]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold blue"
+detect_files = ["CMakeLists.txt", "Makefile"]
+
+[zig]
+symbol       = "⚡ "
+format       = "[$symbol$version]($style) "
+style        = "bold yellow"
+detect_files = ["build.zig"]
+
+[ocaml]
+symbol       = " "
+format       = "[$symbol$version]($style) "
+style        = "bold yellow"
+detect_files = ["dune-project", ".ocamlversion"]
+
+# ── Command duration ──────────────────────────────────────────────────────────
+[cmd_duration]
+min_time = 2000
+format   = "[took $duration]($style) "
+style    = "bold yellow"
+
+# ── Right side ────────────────────────────────────────────────────────────────
+[fill]
+symbol = " "
+
+[time]
+disabled    = false
+format      = "[$time]($style)"
+style       = "dimmed white"
+time_format = "%H:%M"

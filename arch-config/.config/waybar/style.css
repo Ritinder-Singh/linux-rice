@@ -1,0 +1,67 @@
+/* Colors are placeholders — Matugen will override at runtime */
+
+* {
+    font-family:  "MonaspaceNeon Nerd Font", "Noto Sans";
+    font-size:    13px;
+    min-height:   0;
+    border:       none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background-color: rgba(22, 22, 30, 0.85);
+    color:            #e0def4;
+    border-bottom:    1px solid rgba(88, 91, 112, 0.3);
+}
+
+/* Workspaces */
+#workspaces button {
+    padding:     0 4px;
+    color:       #6e6a86;
+    background:  transparent;
+    font-size:   10px;
+}
+
+#workspaces button.active {
+    color:     #c4a7e7;
+    font-size: 12px;
+}
+
+#workspaces button.urgent {
+    color: #eb6f92;
+}
+
+/* Modules — shared padding */
+#window,
+#mpris,
+#cpu,
+#memory,
+#temperature,
+#network,
+#pulseaudio,
+#battery,
+#clock,
+#tray {
+    padding: 0 8px;
+    color:   #e0def4;
+}
+
+/* Active window title */
+#window {
+    color:      #908caa;
+    font-style: italic;
+}
+
+/* Media */
+#mpris {
+    color: #9ccfd8;
+}
+
+/* Warnings */
+#battery.warning  { color: #f6c177; }
+#battery.critical { color: #eb6f92; }
+#temperature.critical { color: #eb6f92; }
+
+/* Tray */
+#tray > .passive      { -gtk-icon-effect: dim; }
+#tray > .needs-attention { -gtk-icon-effect: highlight; color: #f6c177; }

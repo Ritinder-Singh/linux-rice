@@ -1,0 +1,139 @@
+[{
+    "layer":      "top",
+    "position":   "top",
+    "height":     32,
+    "spacing":    4,
+    "exclusive":  true,
+    "passthrough": false,
+
+    "modules-left":   ["hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["mpris"],
+    "modules-right":  [
+        "cpu",
+        "memory",
+        "temperature",
+        "network",
+        "pulseaudio",
+        "battery",
+        "clock",
+        "tray"
+    ],
+
+    // ── Left ──────────────────────────────────────────────────────────────────
+    "hyprland/workspaces": {
+        "disable-scroll":  false,
+        "all-outputs":     true,
+        "format":          "{icon}",
+        "format-icons": {
+            "1":       "●",
+            "2":       "●",
+            "3":       "●",
+            "4":       "●",
+            "5":       "●",
+            "6":       "●",
+            "7":       "●",
+            "8":       "●",
+            "9":       "●",
+            "urgent":  "●",
+            "focused": "●",
+            "default": "○",
+            "empty":   "○"
+        },
+        "persistent-workspaces": {
+            "*": 5
+        }
+    },
+
+    "hyprland/window": {
+        "format":          "{title}",
+        "max-length":      40,
+        "separate-outputs": true
+    },
+
+    // ── Center: media ─────────────────────────────────────────────────────────
+    "mpris": {
+        "format":         "{status_icon} {artist} — {title}",
+        "format-paused":  " {artist} — {title}",
+        "status-icons": {
+            "playing": "",
+            "paused":  "",
+            "stopped": ""
+        },
+        "max-length": 50,
+        "interval":   1
+    },
+
+    // ── Right ─────────────────────────────────────────────────────────────────
+    "cpu": {
+        "format":   " {usage}%",
+        "interval": 3,
+        "tooltip":  false
+    },
+
+    "memory": {
+        "format":         " {percentage}%",
+        "interval":       5,
+        "tooltip-format": "{used:0.1f}G / {total:0.1f}G"
+    },
+
+    "temperature": {
+        "thermal-zone":        0,
+        "critical-threshold":  80,
+        "format":              " {temperatureC}°C",
+        "format-critical":     " {temperatureC}°C"
+    },
+
+    "network": {
+        "format-wifi":         " {signalStrength}%",
+        "format-ethernet":     " connected",
+        "format-disconnected": "⚠ disconnected",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)  {bandwidthUpBits}  {bandwidthDownBits}",
+        "interval": 5
+    },
+
+    "pulseaudio": {
+        "format":       "{icon} {volume}%",
+        "format-muted": " muted",
+        "format-icons": {
+            "default": ["", "", ""]
+        },
+        "on-click":   "pavucontrol",
+        "scroll-step": 5
+    },
+
+    "battery": {
+        "states": {
+            "good":     80,
+            "warning":  30,
+            "critical": 15
+        },
+        "format":          "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged":  " {capacity}%",
+        "format-icons":    ["", "", "", "", ""],
+        "interval": 30
+    },
+
+    "clock": {
+        "format":        " {:%H:%M}",
+        "format-alt":    " {:%a %b %d}",
+        "tooltip-format": "{calendar}",
+        "calendar": {
+            "mode":         "year",
+            "mode-mon-col": 3,
+            "weeks-pos":    "right",
+            "on-scroll":    1,
+            "format": {
+                "months":   "<span color='#cdd6f4'><b>{}</b></span>",
+                "days":     "<span color='#cdd6f4'>{}</span>",
+                "weeks":    "<span color='#7f849c'>W{}</span>",
+                "weekdays": "<span color='#a6e3a1'><b>{}</b></span>",
+                "today":    "<span color='#f38ba8'><b><u>{}</u></b></span>"
+            }
+        }
+    },
+
+    "tray": {
+        "spacing": 8
+    }
+}]

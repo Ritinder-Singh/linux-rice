@@ -1,0 +1,49 @@
+// Zellij configuration
+
+// Default layout: compact status bar at bottom
+default_layout "compact"
+
+// Theme — will be updated by Matugen
+theme "rose-pine-moon"
+
+// Behavior
+pane_frames false           // no pane title frames, cleaner look
+auto_layout true
+session_serialization true  // restore sessions after restart
+
+// Mouse support
+mouse_mode true
+
+// Scrollback
+scroll_buffer_size 10000
+
+// Copy to clipboard on select
+copy_on_select true
+
+keybinds clear-defaults=true {
+    normal {
+        // Open new tab
+        bind "Ctrl t" { NewTab; }
+        // Splits
+        bind "Ctrl |" { NewPane "Right"; }
+        bind "Ctrl -" { NewPane "Down"; }
+        // Navigate panes
+        bind "Alt h" { MoveFocus "Left"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt l" { MoveFocus "Right"; }
+        // Close pane
+        bind "Ctrl w" { CloseFocus; }
+        // Detach session
+        bind "Ctrl d" { Detach; }
+        // Enter scroll mode
+        bind "Ctrl s" { SwitchToMode "Scroll"; }
+    }
+    scroll {
+        bind "Esc" { SwitchToMode "Normal"; }
+        bind "j" { ScrollDown; }
+        bind "k" { ScrollUp; }
+        bind "Ctrl d" { HalfPageScrollDown; }
+        bind "Ctrl u" { HalfPageScrollUp; }
+    }
+}
