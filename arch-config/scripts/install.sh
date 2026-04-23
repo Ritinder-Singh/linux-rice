@@ -156,9 +156,10 @@ for dir in "$DOTFILES_DIR"/.config/*/; do
     cp -r "$dir"* "$HOME/.config/$name/" 2>/dev/null || true
 done
 
-cp "$DOTFILES_DIR"/.zshrc     "$HOME/.zshrc"
-cp "$DOTFILES_DIR"/.zshenv    "$HOME/.zshenv"
-cp "$DOTFILES_DIR"/.gitconfig "$HOME/.gitconfig"
+cp "$DOTFILES_DIR"/.zshrc            "$HOME/.zshrc"
+cp "$DOTFILES_DIR"/.zshenv           "$HOME/.zshenv"
+cp "$DOTFILES_DIR"/.gitconfig        "$HOME/.gitconfig"
+cp "$DOTFILES_DIR"/.gitignore_global "$HOME/.gitignore_global"
 
 chmod +x "$HOME/.config/hypr/scripts/wallpaper-picker.sh"
 chmod +x "$HOME/.config/hypr/scripts/toggle-theme.sh"

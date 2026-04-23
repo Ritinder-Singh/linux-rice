@@ -35,9 +35,5 @@
 [alias]
     lg = log --oneline --graph --decorate --all
 
-[ignore]
-    .DS_Store
-    *.swp
-    .direnv
-    .envrc
-    *.log
+[core]
+    excludesfile = ~/.gitignore_global
