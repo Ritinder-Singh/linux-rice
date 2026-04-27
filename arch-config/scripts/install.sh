@@ -122,7 +122,7 @@ paru_install \
     obsidian \
     ngrok \
     chromedriver \
-    spotify \
+    spotify-launcher \
     otf-monaspace-nerd \
     opentofu \
     terragrunt \
