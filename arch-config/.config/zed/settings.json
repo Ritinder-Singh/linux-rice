@@ -1,0 +1,93 @@
+{
+  "theme": {
+    "mode": "dark",
+    "light": "Rosé Pine Dawn",
+    "dark": "Rosé Pine Moon"
+  },
+  "buffer_font_family": "MonaspaceNeon Nerd Font",
+  "buffer_font_size": 13,
+  "ui_font_size": 16,
+  "vim_mode": true,
+  "relative_line_numbers": true,
+  "tab_size": 2,
+  "hard_tabs": false,
+  "format_on_save": "on",
+  "autosave": "on_focus_change",
+  "show_whitespaces": "selection",
+  "scrollbar": { "show": "never" },
+  "indent_guides": {
+    "enabled": true,
+    "coloring": "indent_aware"
+  },
+  "inlay_hints": { "enabled": true },
+  "terminal": {
+    "font_family": "MonaspaceNeon Nerd Font",
+    "font_size": 13,
+    "opacity": 0.92,
+    "blinking": "off"
+  },
+  "extensions": [
+    "rosepine",
+    "toml",
+    "make",
+    "dockerfile",
+    "docker-compose",
+    "terraform",
+    "haskell",
+    "ocaml",
+    "zig"
+  ],
+  "languages": {
+    "TypeScript": {
+      "tab_size": 2,
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    "JavaScript": {
+      "tab_size": 2,
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    "JSON": {
+      "tab_size": 2,
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    "YAML": {
+      "tab_size": 2,
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      }
+    },
+    "Python": {
+      "tab_size": 4,
+      "formatter": {
+        "external": {
+          "command": "ruff",
+          "arguments": ["format", "--stdin-filename", "{buffer_path}", "-"]
+        }
+      }
+    },
+    "Rust": { "tab_size": 4 },
+    "Go": { "tab_size": 4 },
+    "Haskell": { "tab_size": 2 },
+    "OCaml": { "tab_size": 2 },
+    "Zig": { "tab_size": 4 },
+    "Markdown": { "tab_size": 2 }
+  }
+}

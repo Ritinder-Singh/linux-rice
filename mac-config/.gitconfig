@@ -1,0 +1,38 @@
+[user]
+    name  = Ritinder-Singh
+    email = for.ritindersingh@gmail.com
+
+[init]
+    defaultBranch = main
+
+[push]
+    autoSetupRemote = true
+
+[pull]
+    rebase = true
+
+[diff]
+    colorMoved = default
+
+[core]
+    editor      = nvim
+    pager       = delta
+    excludesfile = ~/.gitignore_global
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate     = true
+    side-by-side = true
+    line-numbers = true
+    syntax-theme = TwoDark
+
+[merge]
+    conflictstyle = diff3
+
+[rebase]
+    autoStash = true
+
+[alias]
+    lg = log --oneline --graph --decorate --all

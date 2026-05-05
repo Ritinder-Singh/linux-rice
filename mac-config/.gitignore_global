@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+.direnv
+.envrc
+
+# Logs & temp
+*.log
+*.tmp
+*.temp
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build output
+dist/
+build/
+out/
+target/
+*.o
+*.a
+*.so
+*.dylib

@@ -119,6 +119,7 @@ paru_install \
     adwaita-qt5-git \
     zen-browser-bin \
     vscodium-bin \
+    zed \
     obsidian \
     ngrok \
     chromedriver \
@@ -136,11 +137,35 @@ paru_install \
 
 success "AUR packages done"
 
-# ── Step 4: Rust toolchain ────────────────────────────────────────────────────
-log "Setting up Rust toolchain..."
+# ── Step 4: Language env managers ────────────────────────────────────────────
+log "Setting up language toolchains via env managers..."
+
+# Node via fnm (replaces pacman nodejs/npm)
+eval "$(fnm env)" 2>/dev/null || true
+fnm install --lts && fnm default lts-latest || warn "fnm: Node install failed"
+
+# Python via uv
+uv python install 3.12 || warn "uv: Python install failed"
+
+# Rust via rustup
 rustup default stable
 rustup component add rust-analyzer
-success "Rust toolchain ready"
+
+# Haskell via ghcup
+source "$HOME/.ghcup/env" 2>/dev/null || true
+ghcup install ghc    recommended || true
+ghcup set     ghc    recommended || true
+ghcup install cabal  latest      || true
+ghcup set     cabal  latest      || true
+
+# OCaml via opam (pacman installed opam; now bootstrap the compiler)
+if ! command -v dune &>/dev/null; then
+  opam init -y --disable-sandboxing
+  eval "$(opam env)"
+  opam install dune ocaml-lsp-server ocamlformat -y || true
+fi
+
+success "Language toolchains ready"
 
 # ── Step 5: NVIDIA drivers ────────────────────────────────────────────────────
 log "Installing NVIDIA drivers..."
