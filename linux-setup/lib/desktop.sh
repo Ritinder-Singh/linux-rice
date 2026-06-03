@@ -48,9 +48,10 @@ _install_hyprland_deps() {
         libx11-xcb-dev \
         libxcb-dri3-dev \
         libxcb-present-dev \
-        polkit-gnome \
-        xdg-desktop-portal-hyprland \
+        policykit-1 \
+        xdg-desktop-portal \
         xdg-desktop-portal-gtk \
+        xdg-desktop-portal-wlr \
         qt5-gtk-platformtheme \
         qt6-wayland \
         libnotify-bin \
