@@ -80,16 +80,51 @@ _install_hyprland_deps() {
 _install_hyprland() {
     log_section "Hyprland"
 
-    if ! has_cmd hyprland; then
-        log_step "Adding Hyprland PPA (hyprland-unofficial/hyprland)..."
-        run sudo add-apt-repository -y ppa:hyprland-unofficial/hyprland
-        run sudo apt-get update
-        apt_install hyprland
-    else
+    if has_cmd hyprland; then
         log_info "Hyprland already installed."
+        return
     fi
 
-    log_ok "Hyprland installed."
+    # Try PPA first
+    log_step "Trying Hyprland via PPA..."
+    if sudo add-apt-repository -y ppa:hyprwm/hyprland 2>/dev/null && \
+       sudo apt-get update && \
+       sudo apt-get install -y hyprland 2>/dev/null; then
+        log_ok "Hyprland installed via PPA."
+        return
+    fi
+
+    log_warn "PPA failed. Falling back to building from source (5-10 mins)..."
+
+    # Build dependencies
+    apt_install \
+        cmake meson ninja-build \
+        libwayland-dev libxkbcommon-dev \
+        libpixman-1-dev libcairo2-dev \
+        libpango1.0-dev libgbm-dev \
+        libdrm-dev libseat-dev \
+        libudev-dev libxcb-util-dev \
+        libxcb-xkb-dev libinput-dev \
+        libxcb-icccm4-dev libxcb-image0-dev \
+        libxcb-keysyms1-dev libxcb-randr0-dev \
+        libxcb-render-util0-dev libxcb-xinerama0-dev \
+        libxcb-shape0-dev libx11-xcb-dev \
+        libxcb-dri3-dev libxcb-present-dev
+
+    # Clone and build
+    if [[ ! -d "$HOME/hyprland-src" ]]; then
+        run git clone --recursive https://github.com/hyprwm/Hyprland.git "$HOME/hyprland-src"
+    else
+        log_info "Source already cloned, pulling latest..."
+        run git -C "$HOME/hyprland-src" pull --recurse-submodules
+    fi
+
+    cd "$HOME/hyprland-src"
+    run make all
+    run sudo make install
+    cd "$SCRIPT_DIR"
+
+    log_ok "Hyprland built and installed from source."
 }
 
 # ── WM Stack: Waybar, Rofi, swww, Matugen, Hyprshot ─────────────────────────
