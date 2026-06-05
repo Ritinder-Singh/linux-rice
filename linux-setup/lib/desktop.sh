@@ -25,42 +25,12 @@ setup_desktop() {
 _install_hyprland_deps() {
     log_section "Hyprland Dependencies"
 
-    apt_install \
-        libwayland-dev \
-        libxkbcommon-dev \
-        libpixman-1-dev \
-        libegl-dev \
-        libgles2-mesa-dev \
-        libdrm-dev \
-        libgbm-dev \
-        libudev-dev \
-        libseat-dev \
-        libxcb-util-dev \
-        libxcb-icccm4-dev \
-        libxcb-image0-dev \
-        libxcb-keysyms1-dev \
-        libxcb-randr0-dev \
-        libxcb-render-util0-dev \
-        libxcb-xinerama0-dev \
-        libxcb-xkb-dev \
-        libxcb-shape0-dev \
-        xwayland \
-        libx11-xcb-dev \
-        libxcb-dri3-dev \
-        libxcb-present-dev \
+    # Common deps (resolve_pkg handles name differences)
+    pkg_install \
         policykit-1 \
         xdg-desktop-portal \
         xdg-desktop-portal-gtk \
         xdg-desktop-portal-wlr \
-        qt5-gtk-platformtheme \
-        qt6-wayland \
-        libnotify-bin \
-        notification-daemon \
-        libglib2.0-dev \
-        libpango1.0-dev \
-        libcairo2-dev \
-        libgdk-pixbuf-2.0-dev \
-        libatk1.0-dev \
         grim \
         slurp \
         wl-clipboard \
@@ -69,14 +39,69 @@ _install_hyprland_deps() {
         playerctl \
         pavucontrol \
         network-manager \
-        network-manager-gnome \
-        blueman \
         bluez
+
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        pkg_install \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libpixman-1-dev \
+            libegl-dev \
+            libgles2-mesa-dev \
+            libdrm-dev \
+            libgbm-dev \
+            libudev-dev \
+            libseat-dev \
+            libxcb-util-dev \
+            libxcb-icccm4-dev \
+            libxcb-image0-dev \
+            libxcb-keysyms1-dev \
+            libxcb-randr0-dev \
+            libxcb-render-util0-dev \
+            libxcb-xinerama0-dev \
+            libxcb-xkb-dev \
+            libxcb-shape0-dev \
+            xwayland \
+            libx11-xcb-dev \
+            libxcb-dri3-dev \
+            libxcb-present-dev \
+            qt5-gtk-platformtheme \
+            qt6-wayland \
+            libnotify-bin \
+            notification-daemon \
+            libglib2.0-dev \
+            libpango1.0-dev \
+            libcairo2-dev \
+            libgdk-pixbuf-2.0-dev \
+            libatk1.0-dev \
+            network-manager-gnome \
+            blueman
+    else
+        pkg_install \
+            wayland \
+            libxkbcommon \
+            pixman \
+            mesa \
+            libdrm \
+            libseat-dev \
+            xwayland \
+            qt5-wayland \
+            qt6-wayland \
+            libnotify \
+            dunst \
+            glib2 \
+            pango \
+            cairo \
+            gdk-pixbuf2 \
+            atk \
+            network-manager-applet \
+            blueman
+    fi
 
     log_ok "Hyprland dependencies installed."
 }
 
-# ── Hyprland (via official PPA) ────────────────────────────────────────────────
+# ── Hyprland ──────────────────────────────────────────────────────────────────
 _install_hyprland() {
     log_section "Hyprland"
 
@@ -85,7 +110,14 @@ _install_hyprland() {
         return
     fi
 
-    # Try PPA first
+    if [[ "$DISTRO" == "arch" ]]; then
+        log_step "Installing Hyprland via yay..."
+        run yay -S --noconfirm --needed hyprland
+        log_ok "Hyprland installed."
+        return
+    fi
+
+    # Ubuntu: try PPA first, fall back to source build
     log_step "Trying Hyprland via PPA..."
     if sudo add-apt-repository -y ppa:hyprwm/hyprland 2>/dev/null && \
        sudo apt-get update && \
@@ -96,8 +128,7 @@ _install_hyprland() {
 
     log_warn "PPA failed. Falling back to building from source (5-10 mins)..."
 
-    # Build dependencies
-    apt_install \
+    pkg_install \
         cmake meson ninja-build \
         libwayland-dev libxkbcommon-dev \
         libpixman-1-dev libcairo2-dev \
@@ -111,7 +142,6 @@ _install_hyprland() {
         libxcb-shape0-dev libx11-xcb-dev \
         libxcb-dri3-dev libxcb-present-dev
 
-    # Clone and build
     if [[ ! -d "$HOME/hyprland-src" ]]; then
         run git clone --recursive https://github.com/hyprwm/Hyprland.git "$HOME/hyprland-src"
     else
@@ -119,10 +149,7 @@ _install_hyprland() {
         run git -C "$HOME/hyprland-src" pull --recurse-submodules
     fi
 
-    cd "$HOME/hyprland-src"
-    run make all
-    run sudo make install
-    cd "$SCRIPT_DIR"
+    (cd "$HOME/hyprland-src" && run make all && run sudo make install)
 
     log_ok "Hyprland built and installed from source."
 }
@@ -134,26 +161,38 @@ _install_wm_stack() {
     # Waybar
     if ! has_cmd waybar; then
         log_step "Installing Waybar..."
-        apt_install waybar
+        if [[ "$DISTRO" == "arch" ]]; then
+            run yay -S --noconfirm --needed waybar
+        else
+            pkg_install waybar
+        fi
     fi
 
     # Rofi-wayland
     if ! has_cmd rofi; then
         log_step "Installing Rofi (Wayland fork)..."
-        apt_install rofi-wayland 2>/dev/null || apt_install rofi
+        if [[ "$DISTRO" == "arch" ]]; then
+            run yay -S --noconfirm --needed rofi-wayland
+        else
+            pkg_install rofi-wayland 2>/dev/null || pkg_install rofi
+        fi
     fi
 
-    # swww (wallpaper daemon) — install from GitHub releases
+    # swww (wallpaper daemon)
     if ! has_cmd swww; then
         log_step "Installing swww (wallpaper daemon)..."
-        local swww_version
-        swww_version=$(curl -fsSL "https://api.github.com/repos/LGFae/swww/releases/latest" | jq -r '.tag_name')
-        download "https://github.com/LGFae/swww/releases/download/${swww_version}/swww-${swww_version}-x86_64-unknown-linux-musl.tar.gz" \
-            /tmp/swww.tar.gz
-        run tar -xzf /tmp/swww.tar.gz -C /tmp/
-        run sudo install -m 755 /tmp/swww /usr/local/bin/swww
-        run sudo install -m 755 /tmp/swww-daemon /usr/local/bin/swww-daemon
-        run rm -f /tmp/swww.tar.gz /tmp/swww /tmp/swww-daemon
+        if [[ "$DISTRO" == "arch" ]]; then
+            run yay -S --noconfirm --needed swww
+        else
+            local swww_version
+            swww_version=$(curl -fsSL "https://api.github.com/repos/LGFae/swww/releases/latest" | jq -r '.tag_name')
+            download "https://github.com/LGFae/swww/releases/download/${swww_version}/swww-${swww_version}-x86_64-unknown-linux-musl.tar.gz" \
+                /tmp/swww.tar.gz
+            run tar -xzf /tmp/swww.tar.gz -C /tmp/
+            run sudo install -m 755 /tmp/swww /usr/local/bin/swww
+            run sudo install -m 755 /tmp/swww-daemon /usr/local/bin/swww-daemon
+            run rm -f /tmp/swww.tar.gz /tmp/swww /tmp/swww-daemon
+        fi
     fi
 
     # Matugen (wallpaper-driven theming) — via cargo
@@ -171,16 +210,24 @@ _install_wm_stack() {
     # Hyprshot (screenshot tool)
     if ! has_cmd hyprshot; then
         log_step "Installing Hyprshot..."
-        local hs_version
-        hs_version=$(curl -fsSL "https://api.github.com/repos/Gustash/Hyprshot/releases/latest" | jq -r '.tag_name')
-        download "https://github.com/Gustash/Hyprshot/releases/download/${hs_version}/hyprshot" \
-            /tmp/hyprshot
-        run sudo install -m 755 /tmp/hyprshot /usr/local/bin/hyprshot
-        run rm -f /tmp/hyprshot
+        if [[ "$DISTRO" == "arch" ]]; then
+            run yay -S --noconfirm --needed hyprshot
+        else
+            local hs_version
+            hs_version=$(curl -fsSL "https://api.github.com/repos/Gustash/Hyprshot/releases/latest" | jq -r '.tag_name')
+            download "https://github.com/Gustash/Hyprshot/releases/download/${hs_version}/hyprshot" \
+                /tmp/hyprshot
+            run sudo install -m 755 /tmp/hyprshot /usr/local/bin/hyprshot
+            run rm -f /tmp/hyprshot
+        fi
     fi
 
     # dunst (notification daemon)
-    apt_install dunst libnotify-bin
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        pkg_install dunst libnotify-bin
+    else
+        pkg_install dunst libnotify
+    fi
 
     log_ok "WM stack installed."
 }
@@ -190,15 +237,20 @@ _install_ghostty() {
     log_section "Ghostty Terminal"
 
     if ! has_cmd ghostty; then
-        log_step "Installing Ghostty via snap (official distribution)..."
-        run sudo snap install ghostty --classic 2>/dev/null || {
-            log_warn "Snap install failed. Trying AppImage fallback..."
-            local ghostty_ver
-            ghostty_ver=$(curl -fsSL "https://api.github.com/repos/ghostty-org/ghostty/releases/latest" | jq -r '.tag_name')
-            download "https://github.com/ghostty-org/ghostty/releases/download/${ghostty_ver}/Ghostty-${ghostty_ver}.AppImage" \
-                "$HOME/.local/bin/ghostty"
-            run chmod +x "$HOME/.local/bin/ghostty"
-        }
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Ghostty via yay..."
+            run yay -S --noconfirm --needed ghostty
+        else
+            log_step "Installing Ghostty via snap..."
+            run sudo snap install ghostty --classic 2>/dev/null || {
+                log_warn "Snap install failed. Trying AppImage fallback..."
+                local ghostty_ver
+                ghostty_ver=$(curl -fsSL "https://api.github.com/repos/ghostty-org/ghostty/releases/latest" | jq -r '.tag_name')
+                download "https://github.com/ghostty-org/ghostty/releases/download/${ghostty_ver}/Ghostty-${ghostty_ver}.AppImage" \
+                    "$HOME/.local/bin/ghostty"
+                run chmod +x "$HOME/.local/bin/ghostty"
+            }
+        fi
     else
         log_info "Ghostty already installed."
     fi
@@ -270,12 +322,16 @@ _install_btm() {
     log_section "btm (System Monitor)"
 
     if ! has_cmd btm; then
-        local btm_version
-        btm_version=$(curl -fsSL "https://api.github.com/repos/ClementTsang/bottom/releases/latest" | jq -r '.tag_name')
-        download "https://github.com/ClementTsang/bottom/releases/download/${btm_version}/bottom_${btm_version}-1_amd64.deb" \
-            /tmp/bottom.deb
-        run sudo dpkg -i /tmp/bottom.deb
-        run rm -f /tmp/bottom.deb
+        if [[ "$DISTRO" == "arch" ]]; then
+            run yay -S --noconfirm --needed bottom
+        else
+            local btm_version
+            btm_version=$(curl -fsSL "https://api.github.com/repos/ClementTsang/bottom/releases/latest" | jq -r '.tag_name')
+            download "https://github.com/ClementTsang/bottom/releases/download/${btm_version}/bottom_${btm_version}-1_amd64.deb" \
+                /tmp/bottom.deb
+            run sudo dpkg -i /tmp/bottom.deb
+            run rm -f /tmp/bottom.deb
+        fi
         log_ok "btm installed."
     else
         log_info "btm already installed."
@@ -288,13 +344,17 @@ _setup_yazi() {
 
     if ! has_cmd yazi; then
         log_step "Installing Yazi..."
-        local yazi_version
-        yazi_version=$(curl -fsSL "https://api.github.com/repos/sxyazi/yazi/releases/latest" | jq -r '.tag_name')
-        download "https://github.com/sxyazi/yazi/releases/download/${yazi_version}/yazi-x86_64-unknown-linux-musl.zip" \
-            /tmp/yazi.zip
-        run unzip -o /tmp/yazi.zip -d /tmp/yazi_extracted/
-        run sudo install -m 755 /tmp/yazi_extracted/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/yazi
-        run rm -rf /tmp/yazi.zip /tmp/yazi_extracted
+        if [[ "$DISTRO" == "arch" ]]; then
+            run yay -S --noconfirm --needed yazi
+        else
+            local yazi_version
+            yazi_version=$(curl -fsSL "https://api.github.com/repos/sxyazi/yazi/releases/latest" | jq -r '.tag_name')
+            download "https://github.com/sxyazi/yazi/releases/download/${yazi_version}/yazi-x86_64-unknown-linux-musl.zip" \
+                /tmp/yazi.zip
+            run unzip -o /tmp/yazi.zip -d /tmp/yazi_extracted/
+            run sudo install -m 755 /tmp/yazi_extracted/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/yazi
+            run rm -rf /tmp/yazi.zip /tmp/yazi_extracted
+        fi
     fi
 
     log_ok "Yazi installed."
@@ -304,14 +364,18 @@ _setup_yazi() {
 _setup_pipewire_audio() {
     log_section "PipeWire Audio"
 
-    apt_install \
-        pipewire \
-        pipewire-audio \
-        pipewire-pulse \
-        pipewire-jack \
-        wireplumber \
-        pavucontrol \
-        easyeffects
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed pipewire pipewire-pulse wireplumber pavucontrol easyeffects
+    else
+        pkg_install \
+            pipewire \
+            pipewire-audio \
+            pipewire-pulse \
+            pipewire-jack \
+            wireplumber \
+            pavucontrol \
+            easyeffects
+    fi
 
     # Enable as user service
     run systemctl --user enable pipewire pipewire-pulse wireplumber
@@ -325,21 +389,26 @@ _setup_pipewire_audio() {
 _setup_display_manager() {
     log_section "Display Manager (greetd + tuigreet)"
 
-    apt_install greetd 2>/dev/null || {
-        log_warn "greetd not in apt, trying alternative..."
-        apt_install lightdm lightdm-gtk-greeter
-        run sudo systemctl enable lightdm
-        log_ok "LightDM installed as display manager fallback."
-        return
-    }
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed greetd
+        run yay -S --noconfirm --needed tuigreet
+    else
+        pkg_install greetd 2>/dev/null || {
+            log_warn "greetd not in apt, trying alternative..."
+            pkg_install lightdm lightdm-gtk-greeter
+            run sudo systemctl enable lightdm
+            log_ok "LightDM installed as display manager fallback."
+            return
+        }
 
-    # tuigreet
-    local tg_version
-    tg_version=$(curl -fsSL "https://api.github.com/repos/apognu/tuigreet/releases/latest" | jq -r '.tag_name')
-    download "https://github.com/apognu/tuigreet/releases/download/${tg_version}/tuigreet-${tg_version}-amd64" \
-        /tmp/tuigreet
-    run sudo install -m 755 /tmp/tuigreet /usr/local/bin/tuigreet
-    run rm -f /tmp/tuigreet
+        # tuigreet
+        local tg_version
+        tg_version=$(curl -fsSL "https://api.github.com/repos/apognu/tuigreet/releases/latest" | jq -r '.tag_name')
+        download "https://github.com/apognu/tuigreet/releases/download/${tg_version}/tuigreet-${tg_version}-amd64" \
+            /tmp/tuigreet
+        run sudo install -m 755 /tmp/tuigreet /usr/local/bin/tuigreet
+        run rm -f /tmp/tuigreet
+    fi
 
     sudo tee /etc/greetd/config.toml > /dev/null <<GREETD
 [terminal]
@@ -618,7 +687,11 @@ label {
 }
 HYPRLOCK
 
-    apt_install hyprlock 2>/dev/null || log_warn "hyprlock not found in apt — install manually if needed."
+    if [[ "$DISTRO" == "arch" ]]; then
+        run yay -S --noconfirm --needed hyprlock 2>/dev/null || log_warn "hyprlock not in AUR — install manually if needed."
+    else
+        pkg_install hyprlock 2>/dev/null || log_warn "hyprlock not found in apt — install manually if needed."
+    fi
 
     log_ok "Hyprland config written to ~/.config/hypr/"
 }

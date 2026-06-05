@@ -1,6 +1,8 @@
 # Linux Setup Script
 
-Personal Ubuntu Server 24.04 LTS setup script.
+Personal setup script for **Ubuntu 24.04 LTS** and **Arch Linux / EndeavourOS**.
+
+The script auto-detects which distro is running and uses the right package manager. On Arch/EndeavourOS, `yay` (AUR helper) is installed automatically before any other packages.
 
 ## What Gets Installed
 
@@ -46,9 +48,26 @@ chmod +x install.sh
 
 ---
 
+## Supported Distros
+
+| Distro | Status | Notes |
+|---|---|---|
+| Ubuntu 24.04 LTS | ✅ Full support | Primary target |
+| EndeavourOS (Arch-based) | ✅ Full support | Uses yay (auto-installed) |
+| Arch Linux | ✅ Full support | Uses yay (auto-installed) |
+| Manjaro | ⚠️ Should work | Detected as Arch, untested |
+
+**Arch/EndeavourOS notes:**
+- `yay` is installed automatically at the start of the `system` section
+- Hyprland installs natively via `yay -S hyprland` — no source build required
+- BlackArch repo is added automatically before the `security` section
+- The `[multilib]` repo is enabled automatically before the `gaming` section
+
+---
+
 ## VirtualBox Testing Guide (Windows Host)
 
-### Step 1 — VirtualBox Setup
+### Ubuntu — Step 1: VirtualBox Setup
 
 1. Download [Ubuntu Server 24.04 LTS x86_64 ISO](https://ubuntu.com/download/server)
 2. In VirtualBox, create a new VM:
@@ -62,14 +81,14 @@ chmod +x install.sh
    - **Display → Screen**: Video Memory 128MB, Graphics Controller **VMSVGA**, 3D Acceleration ✓
    - **Network**: NAT (default) is fine
 
-### Step 2 — Install Ubuntu Server
+### Ubuntu — Step 2: Install Ubuntu Server
 
 1. Start the VM, boot from ISO
 2. Follow Ubuntu Server installer — minimal install, no extras
 3. Create your user account
 4. Reboot into the server
 
-### Step 3 — Run the Script
+### Ubuntu — Step 3: Run the Script
 
 ```bash
 # On the fresh Ubuntu Server install:
@@ -82,6 +101,29 @@ chmod +x install.sh
 ./install.sh --dry-run
 
 # Full install (takes 30-60 min depending on internet speed)
+./install.sh
+```
+
+### EndeavourOS (Arch) — VirtualBox Setup
+
+1. Download [EndeavourOS ISO](https://endeavouros.com/) or [Arch Linux ISO](https://archlinux.org/download/)
+2. In VirtualBox, create a new VM:
+   - **Type**: Linux / Arch Linux (64-bit)
+   - **RAM**: 8192 MB minimum
+   - **CPU**: 4 cores
+   - **Disk**: 80 GB (dynamically allocated)
+3. VM **Settings**:
+   - **Display → Screen**: Video Memory 128MB, Graphics Controller **VMSVGA**, 3D Acceleration ✓
+   - **System → Processor**: Enable VT-x/AMD-V ✓
+4. Install EndeavourOS with the graphical installer (Online install → select a DE to get a working display), then remove the DE after if you only want Hyprland. Or use the **No Desktop** option and run this script.
+5. After install, run:
+
+```bash
+sudo pacman -S git curl
+git clone https://github.com/yourusername/linux-setup.git
+cd linux-setup
+chmod +x install.sh
+./install.sh --dry-run
 ./install.sh
 ```
 

@@ -8,7 +8,7 @@
 #  ███████╗██║██║ ╚████║╚██████╔╝██╔╝ ██╗    ███████║███████╗   ██║   ╚██████╔╝██║
 #  ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝    ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝
 #
-#  Personal Linux Setup Script — Ubuntu Server 24.04 LTS
+#  Personal Linux Setup Script — Ubuntu 24.04 LTS & Arch/EndeavourOS
 #  Target: x86_64 (VirtualBox / bare metal)
 #
 #  Usage:
@@ -87,10 +87,12 @@ preflight() {
     log_section "Pre-flight Checks"
 
     require_not_root
-    require_ubuntu_24
     detect_arch
+    detect_distro
+    require_ubuntu_24
 
     log_info "Architecture : $ARCH ($ARCH_ALIAS)"
+    log_info "Distro       : $DISTRO"
     log_info "User         : $USER"
     log_info "Home         : $HOME"
     log_info "Dry run      : $DRY_RUN"
@@ -138,7 +140,7 @@ log_info "Full log: $LOG_FILE"
 main() {
     echo ""
     echo -e "${BOLD}${MAGENTA}"
-    echo "  Personal Linux Setup — Ubuntu Server 24.04 LTS"
+    echo "  Personal Linux Setup — Ubuntu 24.04 LTS & Arch/EndeavourOS"
     echo "  Starting at $(date)"
     echo -e "${RESET}"
 

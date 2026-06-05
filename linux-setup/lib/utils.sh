@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# lib/utils.sh — Logging, colours, dry-run helpers
+# lib/utils.sh — Logging, colours, dry-run helpers, distro abstraction
 # =============================================================================
 
 # ── Colours ──────────────────────────────────────────────────────────────────
@@ -36,11 +36,82 @@ run() {
     fi
 }
 
-# ── apt wrapper ───────────────────────────────────────────────────────────────
-apt_install() {
-    log_step "Installing: $*"
-    run sudo apt-get install -y --no-install-recommends "$@"
+# ── Distro detection ──────────────────────────────────────────────────────────
+detect_distro() {
+    local id=""
+    if [[ -f /etc/os-release ]]; then
+        id=$(. /etc/os-release && echo "${ID:-}")
+    fi
+    case "$id" in
+        ubuntu)                    DISTRO="ubuntu" ;;
+        arch|endeavouros|manjaro)  DISTRO="arch"   ;;
+        *)
+            log_warn "Unrecognised distro '$id'. Defaulting to ubuntu mode."
+            DISTRO="ubuntu"
+            ;;
+    esac
+    export DISTRO
+    log_info "Distro       : $DISTRO (ID=$id)"
 }
+
+# ── Package-name mapping ──────────────────────────────────────────────────────
+# resolve_pkg <generic-name>  →  prints the distro-correct package name,
+# or prints nothing (empty) if the package should be skipped on this distro.
+resolve_pkg() {
+    local pkg="$1"
+    if [[ "$DISTRO" == "arch" ]]; then
+        case "$pkg" in
+            policykit-1)            echo "polkit"             ; return ;;
+            netcat-openbsd)         echo "openbsd-netcat"     ; return ;;
+            fd-find)                echo "fd"                 ; return ;;
+            build-essential)        echo "base-devel"         ; return ;;
+            python3-pynvim)         echo "python-pynvim"      ; return ;;
+            libinput-dev)           echo "libinput"           ; return ;;
+            libseat-dev)            echo "seatd"              ; return ;;
+            network-manager)        echo "networkmanager"     ; return ;;
+            openjdk-17-jdk)         echo "jdk17-openjdk"      ; return ;;
+            openjdk-21-jdk)         echo "jdk21-openjdk"      ; return ;;
+            fonts-wine)             echo ""                   ; return ;; # skip
+            v4l2loopback-dkms)      echo "v4l2loopback-dkms"  ; return ;;
+            xdg-desktop-portal-wlr) echo "xdg-desktop-portal-wlr" ; return ;;
+            *)                      echo "$pkg"               ; return ;;
+        esac
+    else
+        echo "$pkg"
+    fi
+}
+
+# ── Universal package installer ────────────────────────────────────────────────
+# Resolves each package name for the current distro, skips empty mappings,
+# then calls the appropriate package manager.
+pkg_install() {
+    local resolved=()
+    local pkg mapped
+    for pkg in "$@"; do
+        mapped=$(resolve_pkg "$pkg")
+        if [[ -n "$mapped" ]]; then
+            resolved+=("$mapped")
+        else
+            log_info "Skipping package '$pkg' (not needed on $DISTRO)"
+        fi
+    done
+
+    [[ ${#resolved[@]} -eq 0 ]] && return 0
+
+    log_step "Installing: ${resolved[*]}"
+    if [[ "$DISTRO" == "arch" ]]; then
+        if has_cmd yay; then
+            run yay -S --noconfirm --needed "${resolved[@]}"
+        else
+            run sudo pacman -S --noconfirm --needed "${resolved[@]}"
+        fi
+    else
+        run sudo apt-get install -y --no-install-recommends "${resolved[@]}"
+    fi
+}
+
+# Keep apt_install as a thin alias so any call sites not yet converted still work
+apt_install() { pkg_install "$@"; }
 
 # ── Check if a command exists ─────────────────────────────────────────────────
 has_cmd() { command -v "$1" &>/dev/null; }
@@ -88,9 +159,25 @@ detect_arch() {
 }
 
 # ── OS version check ──────────────────────────────────────────────────────────
+require_supported_distro() {
+    if [[ -z "${DISTRO:-}" ]]; then
+        detect_distro
+    fi
+    case "$DISTRO" in
+        ubuntu|arch) ;;
+        *)
+            log_warn "Unsupported distro. Proceeding in ubuntu mode."
+            confirm "Continue anyway?" || exit 1
+            ;;
+    esac
+}
+
+# Keep old name for callers that haven't been updated yet
 require_ubuntu_24() {
-    if ! grep -q "Ubuntu 24" /etc/os-release 2>/dev/null; then
-        log_warn "This script is designed for Ubuntu 24.04. Proceeding anyway, but things may break."
-        confirm "Continue anyway?" || exit 1
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        if ! grep -q "Ubuntu 24" /etc/os-release 2>/dev/null; then
+            log_warn "This script targets Ubuntu 24.04. Proceeding anyway."
+            confirm "Continue anyway?" || exit 1
+        fi
     fi
 }

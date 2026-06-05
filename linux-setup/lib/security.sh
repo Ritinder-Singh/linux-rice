@@ -8,6 +8,7 @@
 # =============================================================================
 
 setup_security() {
+    [[ "$DISTRO" == "arch" ]] && _setup_blackarch_repo
     _install_security_base
     _install_network_tools
     _install_password_tools
@@ -19,25 +20,49 @@ setup_security() {
     _setup_kali_vm
 }
 
+# ── BlackArch repo — Arch only ────────────────────────────────────────────────
+_setup_blackarch_repo() {
+    if grep -q '\[blackarch\]' /etc/pacman.conf 2>/dev/null; then
+        log_info "BlackArch repo already configured."
+        return
+    fi
+    log_section "Setting up BlackArch repository"
+    local strap_tmp
+    strap_tmp=$(mktemp /tmp/strap.XXXXXX.sh)
+    run curl -fsSL https://blackarch.org/strap.sh -o "$strap_tmp"
+    run chmod +x "$strap_tmp"
+    run sudo bash "$strap_tmp"
+    run rm -f "$strap_tmp"
+    log_ok "BlackArch repo configured."
+}
+
 # ── Security Base Tools ────────────────────────────────────────────────────────
 _install_security_base() {
     log_section "Security Base Tools"
 
-    apt_install \
-        nmap \
-        netcat-openbsd \
-        tcpdump \
-        wireshark \
-        tshark \
-        aircrack-ng \
-        binwalk \
-        exiftool \
-        steghide \
-        foremost \
-        radare2 \
-        ltrace \
-        strace \
-        pwntools 2>/dev/null || true
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed \
+            nmap openbsd-netcat tcpdump wireshark-qt aircrack-ng \
+            binwalk perl-image-exiftool steghide foremost radare2 \
+            ltrace strace 2>/dev/null || true
+        run yay -S --noconfirm --needed python-pwntools 2>/dev/null || true
+    else
+        pkg_install \
+            nmap \
+            netcat-openbsd \
+            tcpdump \
+            wireshark \
+            tshark \
+            aircrack-ng \
+            binwalk \
+            exiftool \
+            steghide \
+            foremost \
+            radare2 \
+            ltrace \
+            strace \
+            pwntools 2>/dev/null || true
+    fi
 
     # Add user to wireshark group (to capture without root)
     if getent group wireshark &>/dev/null; then
@@ -52,21 +77,28 @@ _install_security_base() {
 _install_network_tools() {
     log_section "Network Tools"
 
-    apt_install \
-        nmap \
-        masscan \
-        traceroute \
-        whois \
-        dnsutils \
-        net-tools \
-        ipcalc \
-        netcat-openbsd \
-        socat \
-        proxychains4 \
-        openvpn \
-        wireguard \
-        iptables \
-        nftables
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed \
+            nmap masscan traceroute whois bind-tools net-tools ipcalc \
+            openbsd-netcat socat proxychains-ng openvpn wireguard-tools \
+            iptables nftables
+    else
+        pkg_install \
+            nmap \
+            masscan \
+            traceroute \
+            whois \
+            dnsutils \
+            net-tools \
+            ipcalc \
+            netcat-openbsd \
+            socat \
+            proxychains4 \
+            openvpn \
+            wireguard \
+            iptables \
+            nftables
+    fi
 
     log_ok "Network tools installed."
 }
@@ -75,7 +107,12 @@ _install_network_tools() {
 _install_password_tools() {
     log_section "Password Tools (John the Ripper + Hashcat)"
 
-    apt_install john
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed john hashcat
+        return
+    fi
+
+    pkg_install john
 
     # Hashcat (latest from GitHub for better GPU support)
     if ! has_cmd hashcat; then
@@ -84,10 +121,10 @@ _install_password_tools() {
         download "https://github.com/hashcat/hashcat/releases/download/v${hc_version}/hashcat-${hc_version}.7z" \
             /tmp/hashcat.7z 2>/dev/null || {
             log_warn "Couldn't download Hashcat binary. Trying apt..."
-            apt_install hashcat
+            pkg_install hashcat
             return
         }
-        apt_install p7zip-full
+        pkg_install p7zip-full
         run 7z x /tmp/hashcat.7z -o/tmp/hashcat_extracted/
         run sudo install -m 755 "/tmp/hashcat_extracted/hashcat-${hc_version}/hashcat.bin" /usr/local/bin/hashcat
         run rm -rf /tmp/hashcat.7z /tmp/hashcat_extracted
@@ -101,7 +138,12 @@ _install_forensics_tools() {
     log_section "Forensics Tools (Volatility 3, Autopsy, Sleuth Kit)"
 
     # Sleuth Kit
-    apt_install sleuthkit autopsy
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed sleuthkit autopsy 2>/dev/null || \
+            run yay -S --noconfirm --needed autopsy 2>/dev/null || true
+    else
+        pkg_install sleuthkit autopsy
+    fi
 
     # Volatility 3 (Python-based, install via uv/pip)
     if ! has_cmd vol; then
@@ -137,7 +179,12 @@ _install_web_tools() {
         log_step "Installing Gobuster..."
         run go install github.com/OJ/gobuster/v3@latest
     elif ! has_cmd gobuster; then
-        apt_install gobuster 2>/dev/null || log_warn "gobuster not in apt; install Go first."
+        if [[ "$DISTRO" == "arch" ]]; then
+            run sudo pacman -S --noconfirm --needed gobuster 2>/dev/null || \
+                run go install github.com/OJ/gobuster/v3@latest 2>/dev/null || true
+        else
+            pkg_install gobuster 2>/dev/null || log_warn "gobuster not in apt; install Go first."
+        fi
     fi
 
     # ffuf (Go binary)
@@ -147,7 +194,11 @@ _install_web_tools() {
     fi
 
     # Nikto (Perl-based)
-    apt_install nikto
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed nikto
+    else
+        pkg_install nikto
+    fi
 
     # sqlmap
     if ! has_cmd sqlmap; then
@@ -277,17 +328,22 @@ _setup_kali_vm() {
     log_section "Kali Linux VM (QEMU/KVM)"
 
     # Install QEMU/KVM and virt-manager
-    apt_install \
-        qemu-kvm \
-        libvirt-daemon-system \
-        libvirt-clients \
-        bridge-utils \
-        virtinst \
-        virt-manager \
-        virt-viewer \
-        ovmf \
-        qemu-system-x86 \
-        cpu-checker
+    if [[ "$DISTRO" == "arch" ]]; then
+        run sudo pacman -S --noconfirm --needed \
+            qemu-full virt-manager libvirt ovmf bridge-utils dnsmasq
+    else
+        pkg_install \
+            qemu-kvm \
+            libvirt-daemon-system \
+            libvirt-clients \
+            bridge-utils \
+            virtinst \
+            virt-manager \
+            virt-viewer \
+            ovmf \
+            qemu-system-x86 \
+            cpu-checker
+    fi
 
     # Add user to required groups
     run sudo usermod -aG libvirt "$USER"

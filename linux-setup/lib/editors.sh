@@ -14,27 +14,30 @@ setup_editors() {
 _install_neovim() {
     log_section "Neovim + LazyVim"
 
-    # Install latest stable Neovim from GitHub releases
     if ! has_cmd nvim; then
-        log_step "Installing Neovim (latest stable)..."
-        local nvim_version
-        nvim_version=$(curl -fsSL "https://api.github.com/repos/neovim/neovim/releases/latest" | jq -r '.tag_name')
-        download "https://github.com/neovim/neovim/releases/download/${nvim_version}/nvim-linux64.tar.gz" \
-            /tmp/nvim.tar.gz
-        run sudo tar -xzf /tmp/nvim.tar.gz -C /opt/
-        run sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
-        run rm -f /tmp/nvim.tar.gz
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Neovim via pacman (always latest)..."
+            run sudo pacman -S --noconfirm --needed neovim
+        else
+            log_step "Installing Neovim (latest stable from GitHub)..."
+            local nvim_version
+            nvim_version=$(curl -fsSL "https://api.github.com/repos/neovim/neovim/releases/latest" | jq -r '.tag_name')
+            download "https://github.com/neovim/neovim/releases/download/${nvim_version}/nvim-linux64.tar.gz" \
+                /tmp/nvim.tar.gz
+            run sudo tar -xzf /tmp/nvim.tar.gz -C /opt/
+            run sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+            run rm -f /tmp/nvim.tar.gz
+        fi
     else
         log_info "Neovim already installed: $(nvim --version | head -1)"
     fi
 
     # Neovim dependencies
-    apt_install \
-        lua5.1 \
-        luarocks \
-        python3-pynvim \
-        xclip \
-        xsel
+    if [[ "$DISTRO" == "arch" ]]; then
+        pkg_install lua51 luarocks python-pynvim xclip xsel
+    else
+        pkg_install lua5.1 luarocks python3-pynvim xclip xsel
+    fi
 
     # Install LazyVim starter config
     local NVIM_CONFIG="$HOME/.config/nvim"
@@ -156,8 +159,13 @@ _install_zed() {
     log_section "Zed Editor (IDE setup)"
 
     if ! has_cmd zed; then
-        log_step "Installing Zed..."
-        run curl -fsSL https://zed.dev/install.sh | sh
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Zed via yay..."
+            run yay -S --noconfirm --needed zed
+        else
+            log_step "Installing Zed..."
+            run curl -fsSL https://zed.dev/install.sh | sh
+        fi
     else
         log_info "Zed already installed."
     fi
@@ -392,8 +400,18 @@ ZED_KEYMAP
     log_info "On first launch, Zed will auto-download language servers (LSPs)."
 }
 
-# ── Android Studio (via JetBrains Toolbox) ────────────────────────────────────
+# ── Android Studio ────────────────────────────────────────────────────────────
 _install_android_studio() {
+    if [[ "$DISTRO" == "arch" ]]; then
+        log_section "Android Studio (via yay)"
+        if ! has_cmd android-studio; then
+            run yay -S --noconfirm --needed android-studio
+        else
+            log_info "Android Studio already installed."
+        fi
+        return
+    fi
+
     log_section "Android Studio (via JetBrains Toolbox)"
 
     local TOOLBOX_DIR="$HOME/.local/share/JetBrains/Toolbox"
@@ -422,7 +440,6 @@ _install_android_studio() {
         log_info "JetBrains Toolbox already installed."
     fi
 
-    # Desktop entry for Toolbox
     mkdir -p "$HOME/.local/share/applications"
     cat > "$HOME/.local/share/applications/jetbrains-toolbox.desktop" <<DESKTOP
 [Desktop Entry]
@@ -435,7 +452,7 @@ Comment=JetBrains Toolbox — manage your IDEs
 DESKTOP
 
     log_info "Android Studio deps:"
-    apt_install \
+    pkg_install \
         libglu1-mesa \
         libxi6 \
         libxrender1 \

@@ -5,6 +5,7 @@
 # =============================================================================
 
 setup_system() {
+    [[ "$DISTRO" == "arch" ]] && _install_yay
     _set_hostname
     _system_update
     _install_base_packages
@@ -14,6 +15,22 @@ setup_system() {
     _setup_fail2ban
     _setup_tailscale
     _setup_fonts
+}
+
+# ── yay (AUR helper) — Arch only ──────────────────────────────────────────────
+_install_yay() {
+    if has_cmd yay; then
+        log_info "yay already installed."
+        return
+    fi
+    log_section "Installing yay (AUR helper)"
+    pkg_install git base-devel
+    local build_dir
+    build_dir=$(mktemp -d)
+    run git clone --depth=1 https://aur.archlinux.org/yay.git "$build_dir/yay"
+    (cd "$build_dir/yay" && run makepkg -si --noconfirm)
+    run rm -rf "$build_dir"
+    log_ok "yay installed."
 }
 
 # ── Hostname ──────────────────────────────────────────────────────────────────
@@ -35,13 +52,18 @@ _set_hostname() {
 # ── System Update ─────────────────────────────────────────────────────────────
 _system_update() {
     log_section "System Update"
-    log_step "Updating package lists..."
-    run sudo apt-get update
-    log_step "Upgrading installed packages..."
-    run sudo apt-get upgrade -y
-    log_step "Installing dist-upgrade packages..."
-    run sudo apt-get dist-upgrade -y
-    run sudo apt-get autoremove -y
+    if [[ "$DISTRO" == "arch" ]]; then
+        log_step "Syncing and upgrading packages (pacman -Syu)..."
+        run sudo pacman -Syu --noconfirm
+    else
+        log_step "Updating package lists..."
+        run sudo apt-get update
+        log_step "Upgrading installed packages..."
+        run sudo apt-get upgrade -y
+        log_step "Installing dist-upgrade packages..."
+        run sudo apt-get dist-upgrade -y
+        run sudo apt-get autoremove -y
+    fi
     log_ok "System up to date."
 }
 
@@ -49,10 +71,12 @@ _system_update() {
 _install_base_packages() {
     log_section "Base Packages & Build Essentials"
 
-    apt_install \
+    # fontconfig needed for fc-cache on both distros
+    pkg_install fontconfig
+
+    pkg_install \
         build-essential \
         gcc \
-        g++ \
         clang \
         cmake \
         make \
@@ -66,20 +90,12 @@ _install_base_packages() {
         zip \
         tar \
         gzip \
-        xz-utils \
-        ca-certificates \
-        gnupg \
-        lsb-release \
-        software-properties-common \
-        apt-transport-https \
         jq \
-        httpie \
         bat \
         fzf \
         ripgrep \
         fd-find \
         htop \
-        neofetch \
         fastfetch \
         tldr \
         stow \
@@ -87,15 +103,39 @@ _install_base_packages() {
         tmux \
         xdg-utils \
         dbus \
-        dbus-user-session \
-        pipewire \
-        pipewire-pulse \
-        wireplumber \
-        libpipewire-0.3-dev \
         xwayland \
-        wayland-utils \
-        libwayland-dev \
-        libwayland-client0
+        wayland-utils
+
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        pkg_install \
+            g++ \
+            xz-utils \
+            ca-certificates \
+            gnupg \
+            lsb-release \
+            software-properties-common \
+            apt-transport-https \
+            httpie \
+            neofetch \
+            dbus-user-session \
+            pipewire \
+            pipewire-pulse \
+            wireplumber \
+            libpipewire-0.3-dev \
+            libwayland-dev \
+            libwayland-client0
+    else
+        pkg_install \
+            base-devel \
+            ca-certificates \
+            gnupg \
+            httpie \
+            neofetch \
+            pipewire \
+            pipewire-pulse \
+            wireplumber \
+            libwayland
+    fi
 
     # bat is installed as batcat on Ubuntu — symlink it
     if has_cmd batcat && ! has_cmd bat; then
@@ -116,7 +156,7 @@ _install_base_packages() {
 _setup_zsh() {
     log_section "Zsh + Oh My Zsh"
 
-    apt_install zsh
+    pkg_install zsh
 
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
         log_step "Installing Oh My Zsh..."
@@ -291,7 +331,7 @@ STARSHIP
 _setup_ssh() {
     log_section "SSH Key Setup"
 
-    apt_install openssh-client openssh-server
+    pkg_install openssh
 
     if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
         read -rp "$(echo -e "${YELLOW}Enter email for SSH key: ${RESET}")" ssh_email
@@ -325,9 +365,11 @@ Host gitlab.com
 SSHCONF
     chmod 600 "$HOME/.ssh/config"
 
-    # Start ssh-agent
-    run sudo systemctl enable ssh
-    run sudo systemctl start ssh
+    # Start ssh-agent (service is called sshd on Arch, ssh on Ubuntu)
+    local ssh_svc="ssh"
+    [[ "$DISTRO" == "arch" ]] && ssh_svc="sshd"
+    run sudo systemctl enable "$ssh_svc"
+    run sudo systemctl start "$ssh_svc"
 
     log_ok "SSH configured."
     log_info "Your public key (add to GitHub/GitLab):"
@@ -338,7 +380,7 @@ SSHCONF
 _setup_ufw() {
     log_section "UFW Firewall"
 
-    apt_install ufw
+    pkg_install ufw
 
     run sudo ufw default deny incoming
     run sudo ufw default allow outgoing
@@ -357,7 +399,7 @@ _setup_ufw() {
 _setup_fail2ban() {
     log_section "Fail2ban"
 
-    apt_install fail2ban
+    pkg_install fail2ban
 
     # Local jail config
     sudo tee /etc/fail2ban/jail.local > /dev/null <<'F2B'
@@ -385,13 +427,18 @@ _setup_tailscale() {
     log_section "Tailscale VPN"
 
     if ! has_cmd tailscale; then
-        log_step "Adding Tailscale apt repo..."
-        curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | \
-            sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
-        curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list | \
-            sudo tee /etc/apt/sources.list.d/tailscale.list > /dev/null
-        run sudo apt-get update
-        apt_install tailscale
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Tailscale via yay..."
+            run yay -S --noconfirm --needed tailscale
+        else
+            log_step "Adding Tailscale apt repo..."
+            curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | \
+                sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
+            curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list | \
+                sudo tee /etc/apt/sources.list.d/tailscale.list > /dev/null
+            run sudo apt-get update
+            pkg_install tailscale
+        fi
     else
         log_info "Tailscale already installed."
     fi
@@ -429,6 +476,7 @@ _setup_fonts() {
         fi
     done
 
+    # fontconfig (fc-cache) is installed in _install_base_packages on both distros
     run fc-cache -fv
     log_ok "Nerd Fonts installed: JetBrainsMono, FiraCode, Hack, Meslo."
 }

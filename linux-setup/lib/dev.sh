@@ -27,7 +27,7 @@ setup_dev() {
 _install_git_tools() {
     log_section "Git Setup"
 
-    apt_install git git-lfs
+    pkg_install git git-lfs
 
     run git lfs install
 
@@ -83,19 +83,34 @@ _install_node() {
 _install_python() {
     log_section "Python (via pyenv + uv)"
 
-    # pyenv dependencies
-    apt_install \
-        libssl-dev \
-        zlib1g-dev \
-        libbz2-dev \
-        libreadline-dev \
-        libsqlite3-dev \
-        libncursesw5-dev \
-        libxml2-dev \
-        libxmlsec1-dev \
-        libffi-dev \
-        liblzma-dev \
-        tk-dev
+    # pyenv build dependencies
+    if [[ "$DISTRO" == "arch" ]]; then
+        pkg_install \
+            openssl \
+            zlib \
+            bzip2 \
+            readline \
+            sqlite \
+            ncurses \
+            libxml2 \
+            libxmlsec1 \
+            libffi \
+            xz \
+            tk
+    else
+        pkg_install \
+            libssl-dev \
+            zlib1g-dev \
+            libbz2-dev \
+            libreadline-dev \
+            libsqlite3-dev \
+            libncursesw5-dev \
+            libxml2-dev \
+            libxmlsec1-dev \
+            libffi-dev \
+            liblzma-dev \
+            tk-dev
+    fi
 
     if [[ ! -d "$HOME/.pyenv" ]]; then
         log_step "Installing pyenv..."
@@ -196,16 +211,18 @@ _install_rust() {
 _install_flutter_android() {
     log_section "Flutter + Android SDK"
 
-    apt_install \
-        openjdk-17-jdk \
-        openjdk-21-jdk \
-        libglu1-mesa \
-        lib32stdc++6 \
-        libc6-i386
+    pkg_install openjdk-17-jdk openjdk-21-jdk
 
-    # Set JDK 17 as default (Android Studio prefers it)
-    run sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java 2>/dev/null || \
-        log_warn "Could not set JDK 17 as default via update-alternatives."
+    if [[ "$DISTRO" == "ubuntu" ]]; then
+        pkg_install libglu1-mesa lib32stdc++6 libc6-i386
+        run sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java 2>/dev/null || \
+            log_warn "Could not set JDK 17 as default via update-alternatives."
+    else
+        pkg_install mesa lib32-gcc-libs
+        # Switch to JDK 17 on Arch via archlinux-java
+        run sudo archlinux-java set java-17-openjdk 2>/dev/null || \
+            log_warn "Could not set JDK 17 as default — run: sudo archlinux-java set java-17-openjdk"
+    fi
 
     # Android SDK via command-line tools
     local ANDROID_HOME="$HOME/Android/Sdk"
@@ -264,18 +281,23 @@ _install_docker() {
     log_section "Docker + Docker Compose"
 
     if ! has_cmd docker; then
-        log_step "Adding Docker apt repository..."
-        sudo install -m 0755 -d /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-            sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Docker via yay..."
+            run yay -S --noconfirm --needed docker docker-compose
+        else
+            log_step "Adding Docker apt repository..."
+            sudo install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+                sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
 https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-        run sudo apt-get update
-        apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            run sudo apt-get update
+            pkg_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        fi
     else
         log_info "Docker already installed."
     fi
@@ -333,22 +355,32 @@ _install_terraform_ansible() {
 
     # Terraform
     if ! has_cmd terraform; then
-        log_step "Adding HashiCorp apt repo..."
-        wget -qO- https://apt.releases.hashicorp.com/gpg | \
-            sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Terraform via yay..."
+            run yay -S --noconfirm --needed terraform
+        else
+            log_step "Adding HashiCorp apt repo..."
+            wget -qO- https://apt.releases.hashicorp.com/gpg | \
+                sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
 https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-            sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
-        run sudo apt-get update
-        apt_install terraform
+                sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+            run sudo apt-get update
+            pkg_install terraform
+        fi
     fi
 
     # Ansible
     if ! has_cmd ansible; then
-        log_step "Installing Ansible..."
-        run sudo add-apt-repository -y ppa:ansible/ansible
-        run sudo apt-get update
-        apt_install ansible ansible-lint
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing Ansible via pacman..."
+            run sudo pacman -S --noconfirm --needed ansible
+        else
+            log_step "Installing Ansible..."
+            run sudo add-apt-repository -y ppa:ansible/ansible
+            run sudo apt-get update
+            pkg_install ansible ansible-lint
+        fi
     fi
 
     log_ok "Terraform + Ansible installed."
@@ -359,15 +391,20 @@ _install_github_cli() {
     log_section "GitHub CLI (gh)"
 
     if ! has_cmd gh; then
-        log_step "Adding GitHub CLI apt repo..."
-        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
-            sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-        sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
+        if [[ "$DISTRO" == "arch" ]]; then
+            log_step "Installing GitHub CLI via pacman..."
+            run sudo pacman -S --noconfirm --needed github-cli
+        else
+            log_step "Adding GitHub CLI apt repo..."
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+                sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
 https://cli.github.com/packages stable main" | \
-            sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        run sudo apt-get update
-        apt_install gh
+                sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            run sudo apt-get update
+            pkg_install gh
+        fi
     fi
 
     log_ok "GitHub CLI installed. Run 'gh auth login' to authenticate."
